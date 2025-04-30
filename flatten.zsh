@@ -1,7 +1,7 @@
-# Flatten directory tree – `flatten` command
+# Flatten directory tree - `flatten` command
 
 # Show usage/help
-function ShowHelp {
+function Flatten_ShowHelp {
     printf "Flatten directory tree - collect all files into one target directory\n\n"
     printf "Usage:\n"
     printf "  flatten [options] source_dir [source_dir2 ...] destination_dir\n\n"
@@ -63,7 +63,7 @@ function flatten {
         L) followSymlinksOn=true ;;
         M) multiSourceOn=true ;;
         h | *)
-            ShowHelp
+            Flatten_ShowHelp
             return 2
             ;;
         esac
@@ -73,7 +73,7 @@ function flatten {
     # validate args
     if (($# < 2)); then
         printf "Error: need at least source and destination\n" >&2
-        ShowHelp
+        Flatten_ShowHelp
         return 2
     fi
 
@@ -157,5 +157,3 @@ function flatten {
 
     return 0
 }
-
-# git@github.com:kgruiz/flatten-zsh.git
