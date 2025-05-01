@@ -6,28 +6,26 @@ function Flatten_ShowHelp {
     printf "Usage:\n"
     printf "  flatten [options] source_dir [source_dir2 ...] destination_dir\n\n"
     printf "Options:\n"
-    printf "  -m, --move               Move files instead of copying (default: copy)\n"
+    printf "  -c, --copy               Copy files instead of moving (default: move)\n"
     printf "  -o, --overwrite          Overwrite existing destination files\n"
-    printf "  -n, --no-clobber         Skip if destination file exists (default: on)\n"
-    printf "  -d, --delete-empty       Delete empty source directories after move (default: on)\n"
+    printf "  -N, --no-delete-empty    Do not delete empty source directories\n"
     printf "  -v, --verbose            Print each file operation\n"
-    printf "  -p, --preserve           Preserve timestamps and permissions (default: on)\n"
-    printf "  -c, --create             Create destination directory if missing (default: on)\n"
+    printf "  -X, --no-preserve        Do not preserve timestamps and permissions\n"
+    printf "  -H, --no-create          Do not create destination directory\n"
     printf "  -e, --exclude [glob]     Exclude files matching glob (repeatable)\n"
     printf "  -s, --simulate           Dry run: show actions without modifying\n"
     printf "  -x, --extensions [.ext]  Only include files with given extensions (repeatable)\n"
-    printf "  -P, --progress           Show progress indicator (default: on)\n"
+    printf "  -P, --no-progress        Disable progress indicator\n"
+    printf "  -M, --no-multi-source    Disable multiple source directories\n"
     printf "  -L, --follow-symlinks    Follow symlinks and copy/move targets\n"
-    printf "  -M, --multi-source       Allow multiple source directories (default: on)\n"
     printf "  -h, --help               Show this help and exit\n"
 }
 
 # Main flatten logic
 function flatten {
     # defaults
-    local moveOn=false
+    local moveOn=true
     local overwriteOn=false
-    local noClobberOn=true
     local deleteEmptyOn=true
     local verboseOn=false
     local preserveOn=true
@@ -40,31 +38,30 @@ function flatten {
     local -a extensions
 
     # parse options
-    local optstring="mondvpce:sx:PLMh"
+    local optstring="coNvXHe:sx:PMLh"
     while getopts "$optstring" opt; do
         case $opt in
-        m) moveOn=true ;;
+        c) moveOn=false ;; # -c, --copy
         o)
             overwriteOn=true
-            noClobberOn=false
             ;;
-        n)
-            noClobberOn=true
-            overwriteOn=false
-            ;;
-        d) deleteEmptyOn=true ;;
+        N) deleteEmptyOn=false ;; # -N, --no-delete-empty
         v) verboseOn=true ;;
-        p) preserveOn=true ;;
-        c) createOn=true ;;
+        X) preserveOn=false ;;
+        H) createOn=false ;;
         e) excludePatterns+=("$OPTARG") ;;
         s) simulateOn=true ;;
         x) extensions+=("$OPTARG") ;;
-        P) progressOn=true ;;
+        P) progressOn=false ;;
         L) followSymlinksOn=true ;;
-        M) multiSourceOn=true ;;
-        h | *)
+        M) multiSourceOn=false ;;
+        h)
             Flatten_ShowHelp
-            return 2
+            return 0
+            ;;
+        *)
+            Flatten_ShowHelp
+            return 1
             ;;
         esac
     done
@@ -120,9 +117,6 @@ function flatten {
         if [[ -e $destFile ]]; then
             if ((overwriteOn)); then
                 :
-            elif ((noClobberOn)); then
-                ((verboseOn)) && printf "Skipping existing %s\n" "$destFile"
-                continue
             else
                 printf "Error: %s exists\n" "$destFile" >&2
                 return 3
