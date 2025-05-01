@@ -23,6 +23,7 @@ function Flatten_ShowHelp {
 
 # Main flatten logic
 function flatten {
+
     # defaults
     local moveOn=true
     local overwriteOn=false
@@ -80,11 +81,11 @@ function flatten {
     local sources=("${args[@]:0:${#args[@]}-1}")
 
     # prepare destination
-    ((createOn)) && mkdir -p -- "$destinationDir"
+    [[ $createOn == true ]] && mkdir -p -- "$destinationDir"
 
     # build find command
     local -a findCmd=(find)
-    ((followSymlinksOn)) && findCmd+=(-L) || findCmd+=(-P)
+    [[ $followSymlinksOn == true ]] && findCmd+=(-L) || findCmd+=(-P)
     findCmd+=("${sources[@]}")
     for pattern in "${excludePatterns[@]}"; do
         findCmd+=(! -name "$pattern")
@@ -101,7 +102,7 @@ function flatten {
 
     # count for progress
     local totalCount=0
-    if ((progressOn)); then
+    if [[ $progressOn == true ]]; then
         local -a countCmd=("${findCmd[@]/-print0/-print}")
         totalCount=$("${countCmd[@]}" | wc -l)
     fi
@@ -115,7 +116,7 @@ function flatten {
 
         # conflict handling
         if [[ -e $destFile ]]; then
-            if ((overwriteOn)); then
+            if [[ $overwriteOn == true ]]; then
                 :
             else
                 printf "Error: %s exists\n" "$destFile" >&2
@@ -124,16 +125,16 @@ function flatten {
         fi
 
         # progress
-        ((progressOn)) && printf "[%d/%d] %s\n" "$processedCount" "$totalCount" "$file"
+        [[ $progressOn == true ]] && printf "[%d/%d] %s\n" "$processedCount" "$totalCount" "$file"
 
         # simulate or perform
-        if ((simulateOn)); then
-            printf "Would %s '%s' -> '%s'\n" $([[ moveOn ]] && echo move || echo copy) "$file" "$destFile"
+        if [[ $simulateOn == true ]]; then
+            printf "Would %s '%s' -> '%s'\n" $([[ $moveOn == true ]] && echo move || echo copy) "$file" "$destFile"
         else
-            if ((moveOn)); then
+            if [[ $moveOn == true ]]; then
                 mv -- "$file" "$destFile"
             else
-                if ((preserveOn)); then
+                if [[ $preserveOn == true ]]; then
                     cp -p -- "$file" "$destFile"
                 else
                     cp -- "$file" "$destFile"
@@ -143,7 +144,7 @@ function flatten {
     done < <("${findCmd[@]}")
 
     # delete empty dirs
-    if ((deleteEmptyOn && moveOn && !simulateOn)); then
+    if [[ $deleteEmptyOn == true && $moveOn == true && $simulateOn != true ]]; then
         for src in "${sources[@]}"; do
             find "$src" -type d -empty -delete
         done
