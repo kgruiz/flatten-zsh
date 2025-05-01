@@ -80,7 +80,7 @@ function flatten {
     # identify sources and destination
     local -a args=("$@")
     local destinationDir=${args[-1]}
-    local sources=("${args[@]:0:$#-1}")
+    local sources=("${args[@]:0:${#args[@]}-1}")
 
     # prepare destination
     ((createOn)) && mkdir -p -- "$destinationDir"
